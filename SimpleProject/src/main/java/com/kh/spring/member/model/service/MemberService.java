@@ -7,7 +7,7 @@ public interface MemberService {
 	MemberDTO signIn(MemberDTO member);
 	
 	// 회원가입
-	MemberDTO signUp(MemberDTO member);
+	void signUp(MemberDTO member);
 	
 	// 회원정보수정
 	MemberDTO updateMember(MemberDTO member);
