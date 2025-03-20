@@ -1,16 +1,18 @@
 package com.kh.spring.member.model.service;
 
-import java.security.InvalidParameterException;
+import javax.servlet.http.HttpSession;
 
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.kh.spring.exception.HTMLManipulationException;
 import com.kh.spring.exception.MemberNotFoundException;
+import com.kh.spring.exception.NotSignInException;
 import com.kh.spring.exception.PasswordMissMatchException;
-import com.kh.spring.exception.TooLargeValueException;
+import com.kh.spring.exception.UpdateOneRowFailException;
 import com.kh.spring.member.model.dao.MemberDAO;
+import com.kh.spring.member.model.dao.MemberMapper;
 import com.kh.spring.member.model.dto.MemberDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -21,10 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
 	
-	private final MemberDAO memberDao;
-	private final SqlSessionTemplate sqlSession;
-	private final BCryptPasswordEncoder passwordEncoder;
+	// private final MemberDAO memberDao;
+	// private final SqlSessionTemplate sqlSession;
+	private final PasswordEncoder passwordEncoder;
 	private final MemberValidator validator;
+	private final MemberMapper memberMapper;
 	
 	/*
 	@Autowired
@@ -36,12 +39,11 @@ public class MemberServiceImpl implements MemberService {
 	
 	@Override
 	public MemberDTO signIn(MemberDTO member) {
+		validator.validatedMember(member);
 		
-		validator.validatedSignInMember(member);
+		MemberDTO signInMember = memberMapper.signIn(member);
 		
-		MemberDTO signInMember = memberDao.signIn(sqlSession, member);
-		
-		if(signInMember == null) throw new MemberNotFoundException("존재하지 않는 아이디 입니다.");
+		validator.idNotFound(signInMember);
 		
 		if(!passwordEncoder.matches(member.getMemberPw(), signInMember.getMemberPw())) throw new PasswordMissMatchException("비밀번호가 일치하지 않습니다.");
 		
@@ -50,34 +52,41 @@ public class MemberServiceImpl implements MemberService {
 
 	@Override
 	public void signUp(MemberDTO member) {
-		if(member.getMemberId().length() > 10) {
-			throw new TooLargeValueException("아이디가 너무 깁니다. 10자 이내로 작성해주세요.");
-		}
+		validator.validatedMember(member);
 		
-		if(member == null ||
-		   member.getMemberId() == null ||
-		   member.getMemberId().trim().isEmpty() ||
-		   member.getMemberPw() == null ||
-		   member.getMemberPw().trim().isEmpty()) {
-			throw new InvalidParameterException("유효하지 않은 입력값입니다.");
-		}
-		
-		if(memberDao.checkId(sqlSession, member.getMemberId()) != null) return;
+		memberMapper.signIn(member);
 		
 		member.setMemberPw(passwordEncoder.encode(member.getMemberPw()));
 		
-		if(memberDao.signUp(sqlSession, member) != 1) return;
+		int signUpResult = memberMapper.signUp(member);
 		
-		sqlSession.commit();
+		validator.signUpSuccessCheck(signUpResult);
 	}
 
 	@Override
-	public MemberDTO updateMember(MemberDTO member) {
-		return null;
+	public void updateMember(MemberDTO member, HttpSession session) {
+		MemberDTO signInMember = (MemberDTO)session.getAttribute("signInMember");
+		
+		if(signInMember == null) throw new NotSignInException("로그인된 상태가 아닙니다. 먼저 로그인해주세요.");
+		
+		if(!member.getMemberId().equals(signInMember.getMemberId())) throw new HTMLManipulationException("경고! 웹 페이지가 조작되었습니다.");
+		
+		MemberDTO signInResult = memberMapper.signIn(member);
+		
+		if(signInResult == null) throw new MemberNotFoundException("존재하지 않는 아이디입니다.");
+		
+		int updateResult = memberMapper.updateMember(signInResult);
+		
+		if(updateResult != 1) throw new UpdateOneRowFailException("알 수 없는 이유로 회원정보 수정에 실패했습니다. 다시 시도해주세요.");
+		
+		signInMember.setMemberName(member.getMemberName());
+		signInMember.setEmail(member.getEmail());
 	}
 
 	@Override
-	public int deleteMember(MemberDTO member) {
+	public int deleteMember(MemberDTO member, HttpSession session) {
+		MemberDTO signInMember = (MemberDTO)session.getAttribute("signInMember");
+		
 		return 0;
 	}
 }

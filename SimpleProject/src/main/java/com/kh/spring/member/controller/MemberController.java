@@ -135,4 +135,29 @@ public class MemberController {
 		
 		return "main_page";
 	}
+	
+	@GetMapping("mypage")
+	public String toMyPage() {
+		return "member/my_page";
+	}
+	
+	@PostMapping("update-member")
+	public String updateMember(MemberDTO member, HttpSession session) {
+		// 1. Controller에서는 RequestMapping 애노테이션 및 요청 시 전달값이 잘 전달되는지 확인
+		// log.info("사용자가 입력한 값: {}", member);
+		
+		// 2. 이번에 실행할 SQL문을 고려하여 설계
+		memberService.updateMember(member, session);
+		
+		return "redirect:mypage";
+	}
+	
+	@PostMapping("delete-member")
+	public String deleteMember(MemberDTO member, HttpSession session) {
+		// log.info("사용자가 입력한 값: {}", member);
+		memberService.deleteMember(member, session);
+		
+		return "redirect:/";
+	}
+	
 }
