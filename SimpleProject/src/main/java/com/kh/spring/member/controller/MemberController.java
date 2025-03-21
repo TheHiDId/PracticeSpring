@@ -119,7 +119,7 @@ public class MemberController {
 		return "redirect:/";
 	}
 	
-	@GetMapping("toMain")
+	@GetMapping("main")
 	public String toMain() {
 		return "redirect:/";
 	}

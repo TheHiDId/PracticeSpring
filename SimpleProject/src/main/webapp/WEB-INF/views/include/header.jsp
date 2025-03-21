@@ -58,6 +58,13 @@
     </style>
 </head>
 <body>
+	<c:if test="${ not empty sessionScope.message }">
+	<script>
+		alert('${ sessionScope.message }');
+	</script>
+	<c:remove var="message" scope="session" />
+	</c:if>
+	
 
     <div id="header">
         <div id="header_1">
@@ -85,9 +92,9 @@
         </div>
         <div id="header_2">
             <ul>
-                <li><a href="toMain">HOME</a></li>
+                <li><a href="/spring/main">HOME</a></li>
                 <li><a href="">공지사항</a></li>
-                <li><a href="boards">자유게시판</a></li>
+                <li><a href="/spring/boards">자유게시판</a></li>
                 <li><a href="">사진게시판</a></li>
             </ul>
         </div>

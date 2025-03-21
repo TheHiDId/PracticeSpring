@@ -29,7 +29,7 @@
 		<constructor-arg ref="sqlSessionFactory" />
 	</bean>
 	
-	<mybatis-spring:scan base-package="com.kh.spring.member.model.dao"/>
+	<mybatis-spring:scan base-package="com.kh.spring.member.model.dao, com.kh.spring.board.model.mapper"/>
 	
 	<bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver">
 		<property name="maxUploadSize" value="100000000" />
